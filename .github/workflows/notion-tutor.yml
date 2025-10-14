@@ -1,0 +1,38 @@
+name: Notion CS Tutor Automation
+
+on:
+  # 매일 아침 8시에 자동 실행 (한국 시간 기준, UTC는 -9시간이므로 23시)
+  schedule:
+    - cron: '0 23 * * *'
+
+  # 수동 실행 버튼 활성화
+  workflow_dispatch:
+
+jobs:
+  run-tutor:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 코드 체크아웃
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Python 환경 설정
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # 3. 의존성 설치
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 4. Notion CS Tutor 실행
+      - name: Run Notion CS Tutor
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python main.py
