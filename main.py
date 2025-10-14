@@ -64,6 +64,30 @@ def parse_rich_text(text: str) -> list:
         rich_text.append({"type": "text", "text": {"content": content}, "annotations": annotations})
     return rich_text
 
+def normalize_language(lang: str) -> str:
+    """Gemini가 생성한 언어명을 Notion이 지원하는 형식으로 변환합니다."""
+    lang_lower = lang.lower().strip()
+    language_map = {
+        'py': 'python', 'js': 'javascript', 'ts': 'typescript', 'cpp': 'c++',
+        'csharp': 'c#', 'cs': 'c#', 'sh': 'shell', 'yml': 'yaml',
+        'text': 'plain text', 'plaintext': 'plain text', '': 'plain text',
+        'node': 'javascript', 'react': 'javascript', 'vue': 'javascript'
+    }
+    normalized = language_map.get(lang_lower, lang_lower)
+
+    # Notion 지원 언어 목록
+    supported = [
+        'abap', 'arduino', 'bash', 'basic', 'c', 'clojure', 'coffeescript', 'c++', 'c#', 'css',
+        'dart', 'diff', 'docker', 'elixir', 'elm', 'erlang', 'flow', 'fortran', 'f#', 'gherkin',
+        'glsl', 'go', 'graphql', 'groovy', 'haskell', 'html', 'java', 'javascript', 'json', 'julia',
+        'kotlin', 'latex', 'less', 'lisp', 'livescript', 'lua', 'makefile', 'markdown', 'markup',
+        'matlab', 'mermaid', 'nix', 'objective-c', 'ocaml', 'pascal', 'perl', 'php', 'plain text',
+        'powershell', 'prolog', 'protobuf', 'python', 'r', 'reason', 'ruby', 'rust', 'sass', 'scala',
+        'scheme', 'scss', 'shell', 'sql', 'swift', 'typescript', 'vb.net', 'verilog', 'vhdl',
+        'visual basic', 'webassembly', 'xml', 'yaml', 'java/c/c++/c#'
+    ]
+    return normalized if normalized in supported else 'plain text'
+
 def markdown_to_blocks(markdown_text: str) -> list:
     """Markdown 텍스트를 Notion 블록 객체 리스트로 변환합니다."""
     blocks = []
@@ -79,7 +103,7 @@ def markdown_to_blocks(markdown_text: str) -> list:
             blocks.append({"type": "heading_3", "heading_3": {"rich_text": parse_rich_text(line[5:])}})
         elif line.startswith('```'):
             code_lines = []
-            language = line[3:].strip()
+            language = normalize_language(line[3:].strip())
             i += 1
             while i < len(lines) and not lines[i].startswith('```'):
                 code_lines.append(lines[i])
@@ -87,7 +111,7 @@ def markdown_to_blocks(markdown_text: str) -> list:
             content = '\n'.join(code_lines)
             for j in range(0, len(content), 1900):
                 chunk = content[j:j+1900]
-                blocks.append({"type": "code", "code": {"rich_text": [{"type": "text", "text": {"content": chunk}}], "language": language if language else "plaintext"}})
+                blocks.append({"type": "code", "code": {"rich_text": [{"type": "text", "text": {"content": chunk}}], "language": language}})
         elif re.match(r'^\s*([\*\-\+])\s', line):
             blocks.append({"type": "bulleted_list_item", "bulleted_list_item": {"rich_text": parse_rich_text(re.sub(r'^\s*([\*\-\+])\s', '', line))}})
         elif re.match(r'^\s*\d+\.\s', line):
