@@ -3,6 +3,7 @@ import re
 import time
 import notion_client
 import google.generativeai as genai
+import random
 from dotenv import load_dotenv
 
 # .env 파일에서 환경 변수 로드
@@ -132,10 +133,22 @@ def publish_to_notion(notion: notion_client.Client, db_id: str, topic: str, cont
             "주제": {"title": [{"text": {"content": topic}}]},
             "카테고리": {"select": {"name": category}},
             "핵심 키워드": {"multi_select": [{"name": kw} for kw in keywords]},
+            "작성일": {"date": {"start": time.strftime("%Y-%m-%d")}},
         }
-        children = markdown_to_blocks(content_md)
-        notion.pages.create(parent={"database_id": db_id}, properties=properties, children=children)
-        print(f"   ✅ \"{topic}\" 게시 완료!")
+        all_blocks = markdown_to_blocks(content_md)
+
+        # 첫 100개 블록으로 페이지 생성
+        initial_blocks = all_blocks[:100]
+        page = notion.pages.create(parent={"database_id": db_id}, properties=properties, children=initial_blocks)
+
+        # 남은 블록들을 100개씩 나눠서 추가
+        remaining_blocks = all_blocks[100:]
+        for i in range(0, len(remaining_blocks), 100):
+            chunk = remaining_blocks[i:i+100]
+            notion.blocks.children.append(block_id=page["id"], children=chunk)
+            time.sleep(0.3)  # API 호출 제한 방지
+
+        print(f"   ✅ \"{topic}\" 게시 완료! (총 {len(all_blocks)}개 블록)")
     except Exception as e:
         print(f"   ❌ Notion 게시 중 오류 발생: {e}")
 
@@ -188,12 +201,13 @@ def main():
         db_id = os.getenv("NOTION_DATABASE_ID")
         if not db_id: raise ValueError("DB ID가 .env에 없습니다.")
 
-        num_posts_to_create = 1
-        category = "네트워크"
+        categories = ["네트워크","알고리즘","프론트엔드","백엔드","AI","자료구조","디자인 패턴"]
+        num_posts_to_create = 2
 
         existing_topics = get_existing_topics(notion, db_id)
 
         for i in range(num_posts_to_create):
+            category = random.choice(categories)
             print(f"\n--- {i+1}/{num_posts_to_create}번째 글 생성 시작 ---")
             
             new_topic = generate_new_topic(gemini_model, existing_topics, category)
