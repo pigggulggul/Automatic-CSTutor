@@ -1,4 +1,4 @@
+packaging
+google-generativeai
 notion-client>=1.0.0
 python-dotenv
-google-generativeai
-packaging
