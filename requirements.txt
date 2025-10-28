@@ -1,3 +1,4 @@
 notion-client
 python-dotenv
 google-generativeai
+packaging
