@@ -1,4 +1,4 @@
 packaging
 google-generativeai
-notion-client>=1.0.0
+notion-client>=2.2.1
 python-dotenv
