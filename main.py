@@ -17,7 +17,7 @@ def init_clients():
     if not notion_api_key or not gemini_api_key: raise ValueError("API 키가 .env 파일에 설정되지 않았습니다.")
     notion = notion_client.Client(auth=notion_api_key)
     genai.configure(api_key=gemini_api_key)
-    gemini_model = genai.GenerativeModel('models/gemini-pro-latest')
+    gemini_model = genai.GenerativeModel('models/gemini-2.5-flash')
     return notion, gemini_model
 
 # --- Notion 관련 함수 ---
